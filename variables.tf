@@ -52,6 +52,16 @@ variable "bastion_allowed_iam_group" {
   description = "Name IAM group, members of this group will be able to ssh into bastion instances if they have provided ssh key in their profile"
 }
 
+variable "bastion_allowed_iam_group_tag" {
+  description = "Key Tag of EC2 that contains a Comma separated list of IAM groups to import - bastion_allowed_iam_group_tag will override bastion_allowed_iam_group, you can use only one of them"
+  default     = ""
+}
+
+variable "assumerole" {
+  description = "IAM Role ARN for multi account"
+  default     = ""
+}
+
 variable "tags" {
   type        = "map"
   description = "AWS tags that should be associated with created resources (except autoscaling group!)"
@@ -118,3 +128,7 @@ variable "create_iam_service_role" {
   description = "create bastion service role and policies (standalone account) boolean"
   default     = "0"
 }
+
+variable "aws_region" {}
+
+variable "aws_profile" {}

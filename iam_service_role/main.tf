@@ -1,5 +1,5 @@
 #get aws region for use later in plan
-data "aws_region" "current" {}
+# data "aws_region" "current" {}
 
 ###########
 #aws iam role for host
