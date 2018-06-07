@@ -96,7 +96,7 @@ write_files:
         cd /opt/sshd_worker
         systemctl start docker
         docker build -t sshd_worker .
-        mkdir /opt/iam_helper
+        # mkdir /opt/iam_helper
         #set hostname to match dns
         hostname -b ${bastion_host_name}-${vpc}-bastion-host
         echo ${bastion_host_name}-bastion-host > /etc/hostname
