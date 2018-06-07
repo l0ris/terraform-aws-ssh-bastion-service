@@ -9,10 +9,14 @@ write_files:
     content: |
        FROM ubuntu:16.04
 
-        RUN apt-get update && apt-get install -y openssh-server sudo && echo '\033[1;31mI am a one-time Ubuntu container with passwordless sudo. \033[1;37;41mI will terminate after 12 hours or else on exit\033[0m' > /etc/motd && mkdir /var/run/sshd
-
+        RUN apt-get update && apt-get install -y openssh-server awscli sudo && echo '\033[1;31mI am a one-time Ubuntu container with passwordless sudo. \033[1;37;41mI will terminate after 12 hours or else on exit\033[0m' > /etc/motd && mkdir /var/run/sshd
+        
+        COPY installer.sh /opt
+        COPY authorized_keys_command.sh /usr/bin/authorized_keys_command.sh
+        COPY import_users.sh /usr/bin/import_users.sh
+  
         EXPOSE 22
-        CMD ["/opt/ssh_populate.sh"]
+        CMD ["/opt/ssh_startup.sh"]
     path: /opt/sshd_worker/Dockerfile
 
   -
@@ -38,8 +42,10 @@ write_files:
 
         # ) > /dev/null 2>&1
 
+        /usr/bin/import_users.sh
+
         /usr/sbin/sshd -i
-    path: /opt/iam_helper/ssh_populate.sh
+    path: /opt/sshd_worker/ssh_startup.sh
     permissions: '0754'
 
   -
@@ -160,7 +166,7 @@ write_files:
         aws iam list-ssh-public-keys --user-name "$$UnsaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read -r KeyId; do
         aws iam get-ssh-public-key --user-name "$$UnsaveUserName" --ssh-public-key-id "$$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
         done
-    path: /opt/iam_helper/authorized_keys_command.sh
+    path: /opt/sshd_worker/authorized_keys_command.sh
     permissions: '0755'
 
   -
@@ -453,5 +459,27 @@ write_files:
 
         sync_accounts
 
-    path: /opt/iam_helper/import_users.sh
+    path: /opt/sshd_worker/import_users.sh
+    permissions: '0755'
+
+  -
+    content: |
+        #!/bin/bash 
+        if grep -q '#AuthorizedKeysCommand none' "/etc/ssh/sshd_config"; then
+        sed -i "s:#AuthorizedKeysCommand none:AuthorizedKeysCommand /usr/bin/authorized_keys_command.sh:g" "/etc/ssh/sshd_config"
+        else
+        if ! grep -q "AuthorizedKeysCommand /usr/bin/authorized_keys_command.sh" "/etc/ssh/sshd_config"; then
+            echo "AuthorizedKeysCommand /usr/bin/authorized_keys_command.sh" >> "/etc/ssh/sshd_config"
+        fi
+        fi
+        if grep -q '#AuthorizedKeysCommandUser nobody' "/etc/ssh/sshd_config"; then
+        sed -i "s:#AuthorizedKeysCommandUser nobody:AuthorizedKeysCommandUser nobody:g" "/etc/ssh/sshd_config"
+        else
+        if ! grep -q 'AuthorizedKeysCommandUser nobody' "/etc/ssh/sshd_config"; then
+            echo "AuthorizedKeysCommandUser nobody" >> "/etc/ssh/sshd_config"
+        fi
+        fi
+        retval=0
+        
+    path: /opt/sshd_worker/install.sh
     permissions: '0755'
