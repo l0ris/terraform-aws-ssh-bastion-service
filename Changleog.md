@@ -1,5 +1,17 @@
 **N.B. It is not possible to successfully apply module version >/=3.4 over version </=3.3 due to change from 'aws_security_group' to aws_security_group_rules' you will need to terraform destroy; terraform apply in this case**
 
+# 4.0
+
+Move to Amazon Linux 2 for EC2 host. 
+Implement appendable user data.
+
+Both changes make it easier to append user data for your logging solution of choice
+
+Container Ubuntu version now defaults to 18.04
+EC2 healthcheck port now defaults to 2222
+
+Update readme
+
 # 3.7
 
 **Feature:** ELB health check port may be optionally set to either port 22 (containerised service; default) or port 2222 (EC2 host sshd). If you are deploying a large number of bastion instances, all of them checking into the same parent account for IAM queries in reponse to load balancer health checks on port 22 causes IAM rate limiting from AWS. Using the modified EC2 host sshd of port 2222 avoids this issue and is recommended for larger deployments. The host sshd is set to port 2222 as part of the service setup so this heathcheck is not entirely invalid. Security group rules are conditionally created to support any combination of access/healthceck on port 2222 or not.
