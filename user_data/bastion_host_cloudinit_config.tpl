@@ -89,6 +89,5 @@ go build -ldflags "-X main.iamGroup=${bastion_allowed_iam_group}" -o /opt/iam_he
 chown root /opt/iam_helper
 chmod -R 700 /opt/iam_helper
 #set hostname to match dns
-hostname -b ${bastion_host_name}-${vpc}-bastion-host
-echo ${bastion_host_name}-bastion-host > /etc/hostname
-echo '127.0.0.1 ${bastion_host_name}-bastion-host' | sudo tee --append /etc/hosts
+hostnamectl set-hostname ${bastion_host_name}-${vpc}-bastion-host
+sed -e '/127.0.0.1/s/$/ ${bastion_host_name}-bastion-host/' -i /etc/hosts
