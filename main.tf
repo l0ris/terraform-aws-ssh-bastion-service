@@ -56,6 +56,46 @@ data "template_file" "user_data_same_account" {
   }
 }
 
+# componentised user data
+
+data "template_cloudinit_config" "user_data_same_account" {
+  count         = "${local.assume_role_no}"
+  gzip          = false
+  base64_encode = false
+
+  part {
+    filename     = "module_user_data"
+    content_type = "text/x-shellscript"
+    content      = "${data.template_file.user_data_same_account.rendered}"
+  }
+
+  part {
+    filename     = "extra_user_data"
+    content_type = "${var.extra_user_data_content_type}"
+    content      = "${var.extra_user_data_content}"
+    merge_type   = "${var.extra_user_data_merge_type}"
+  }
+}
+
+data "template_cloudinit_config" "user_data_assume_role" {
+  count         = "${local.assume_role_yes}"
+  gzip          = false
+  base64_encode = false
+
+  part {
+    filename     = "module_user_data"
+    content_type = "text/x-shellscript"
+    content      = "${data.template_file.user_data_assume_role.rendered}"
+  }
+
+  part {
+    filename     = "extra_user_data"
+    content_type = "${var.extra_user_data_content_type}"
+    content      = "${var.extra_user_data_content}"
+    merge_type   = "${var.extra_user_data_merge_type}"
+  }
+}
+
 # ##################
 # # security group for bastion_service
 # ##################
@@ -168,18 +208,21 @@ resource "aws_security_group_rule" "bastion_host_out" {
 }
 
 ##########################
-#Query for most recent AMI of type debian for use as host
+#Query for most recent AMI of type Amazon Linux for use as host
 ##########################
 
-data "aws_ami" "debian" {
+data "aws_ami" "amazon-linux-2" {
   most_recent = true
 
   filter {
-    name   = "name"
-    values = ["debian-stretch-hvm-x86_64-*"]
+    name   = "owner-alias"
+    values = ["amazon"]
   }
 
-  owners = ["379101102735"] # Debian
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm*"]
+  }
 }
 
 ############################
@@ -189,15 +232,15 @@ data "aws_ami" "debian" {
 resource "aws_launch_configuration" "bastion-service-host-local" {
   count                       = "${local.assume_role_no}"
   name_prefix                 = "bastion-service-host"
-  image_id                    = "${data.aws_ami.debian.id}"
+  image_id                    = "${data.aws_ami.amazon-linux-2.id}"
   instance_type               = "${var.bastion_instance_type}"
   iam_instance_profile        = "${aws_iam_instance_profile.bastion_service_profile.arn}"
   associate_public_ip_address = "false"
   security_groups             = ["${aws_security_group.bastion_service.id}"]
 
   user_data = "${element(
-    concat(data.template_file.user_data_assume_role.*.rendered,
-           data.template_file.user_data_same_account.*.rendered),
+    concat(data.template_cloudinit_config.user_data_assume_role.*.rendered,
+           data.template_cloudinit_config.user_data_same_account.*.rendered),
     0)}"
 
   key_name = "${var.bastion_service_host_key_name}"
@@ -210,15 +253,15 @@ resource "aws_launch_configuration" "bastion-service-host-local" {
 resource "aws_launch_configuration" "bastion-service-host-assume" {
   count                       = "${local.assume_role_yes}"
   name_prefix                 = "bastion-service-host"
-  image_id                    = "${data.aws_ami.debian.id}"
+  image_id                    = "${data.aws_ami.amazon-linux-2.id}"
   instance_type               = "${var.bastion_instance_type}"
   iam_instance_profile        = "${aws_iam_instance_profile.bastion_service_assume_role_profile.arn}"
   associate_public_ip_address = "false"
   security_groups             = ["${aws_security_group.bastion_service.id}"]
 
   user_data = "${element(
-    concat(data.template_file.user_data_assume_role.*.rendered,
-           data.template_file.user_data_same_account.*.rendered),
+    concat(data.template_cloudinit_config.user_data_assume_role.*.rendered,
+           data.template_cloudinit_config.user_data_same_account.*.rendered),
     0)}"
 
   key_name = "${var.bastion_service_host_key_name}"
