@@ -1,13 +1,13 @@
 #!/bin/bash
-cat <<EOF >> /opt/sshd_worker/Dockerfile
+mkdir /opt/sshd_worker
+cat <<EOF > /opt/sshd_worker/Dockerfile
 FROM ubuntu:${container_ubuntu_version}
 
-RUN apt-get update && apt-get install -y openssh-server sudo awscli && echo '\033[1;31mI am a one-time Ubuntu container with passwordless sudo. \033[1;37;41mI will terminate after 12 hours or else on exit\033[0m' > /etc/motd && mkdir /var/run/sshd
-
+RUN apt-get update && apt-get upgrade && apt-get install -y openssh-server sudo awscli curl dnsutils && echo '\033[1;31mI am a one-time Ubuntu container with passwordless sudo. \033[1;37;41mI will terminate after 12 hours or else on exit\033[0m' > /etc/motd && mkdir /var/run/sshd && unminimize
 EXPOSE 22
 CMD ["/opt/ssh_populate.sh"]
 EOF
-cat <<EOF >> /opt/iam_helper/ssh_populate.sh
+cat <<EOF > /opt/iam_helper/ssh_populate.sh
 #!/bin/bash
 (
 count=1
@@ -32,7 +32,7 @@ done
 /usr/sbin/sshd -i
 EOF
 chmod 0754 /opt/iam_helper/ssh_populate.sh
-cat <<EOF >> /etc/systemd/system/sshd_worker.socket
+cat <<EOF > /etc/systemd/system/sshd_worker.socket
 [Unit]
 Description=SSH Socket for Per-Connection docker ssh container
 
@@ -42,7 +42,7 @@ Accept=true
 
 [Install]
 WantedBy=sockets.target
-cat <<EOF >> /etc/systemd/system/sshd_worker@.service
+cat <<EOF > /etc/systemd/system/sshd_worker@.service
 [Unit]
 Description=SSH Per-Connection docker ssh container
 
@@ -55,7 +55,7 @@ RuntimeMaxSec=43200
 [Install]
 WantedBy=multi-user.target
 EOF
-cat <<EOF >> /opt/golang/src/iam-authorized-keys-command/main.go
+cat <<EOF > /opt/golang/src/iam-authorized-keys-command/main.go
 ${authorized_command_code}
 EOF
 chmod 0754 /opt/golang/src/iam-authorized-keys-command/main.go
