@@ -3,10 +3,11 @@ mkdir /opt/sshd_worker
 cat <<EOF > /opt/sshd_worker/Dockerfile
 FROM ubuntu:${container_ubuntu_version}
 
-RUN apt-get update && apt-get upgrade && apt-get install -y openssh-server sudo awscli curl dnsutils && echo '\033[1;31mI am a one-time Ubuntu container with passwordless sudo. \033[1;37;41mI will terminate after 12 hours or else on exit\033[0m' > /etc/motd && mkdir /var/run/sshd && unminimize
+RUN apt-get update && apt-get upgrade && apt-get install -y openssh-server sudo awscli curl dnsutils && echo '\033[1;31mI am a one-time Ubuntu container with passwordless sudo. \033[1;37;41mI will terminate after 12 hours or else on exit\033[0m' > /etc/motd && mkdir /var/run/sshd
 EXPOSE 22
 CMD ["/opt/ssh_populate.sh"]
 EOF
+mkdir /opt/iam_helper/
 cat <<EOF > /opt/iam_helper/ssh_populate.sh
 #!/bin/bash
 KST=(`aws sts assume-role --role-arn "${assume_role_arn}" --role-session-name $(hostname) --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text`)
@@ -34,7 +35,7 @@ done
 /usr/sbin/sshd -i
 EOF
 chmod 0754 /opt/iam_helper/ssh_populate.sh
-cat <<EOF > /etc/systemd/system/sshd_worker.socket
+cat <<EOF > /usr/lib/systemd/system/sshd_worker.socket
 [Unit]
 Description=SSH Socket for Per-Connection docker ssh container
 
@@ -44,6 +45,7 @@ Accept=true
 
 [Install]
 WantedBy=sockets.target
+EOF
 cat <<EOF > /etc/systemd/system/sshd_worker@.service
 [Unit]
 Description=SSH Per-Connection docker ssh container
