@@ -59,7 +59,8 @@ RuntimeMaxSec=43200
 [Install]
 WantedBy=multi-user.target
 EOF
-cat <<EOF > /opt/golang/src/iam-authorized-keys-command/main.go
+mkdir -p /opt/golang/src/iam-authorized-keys-command/
+cat << "EOF" > /opt/golang/src/iam-authorized-keys-command/main.go
 ${authorized_command_code}
 EOF
 chmod 0754 /opt/golang/src/iam-authorized-keys-command/main.go
@@ -79,12 +80,11 @@ docker build -t sshd_worker .
 # mkdir /opt/iam_helper
 
 # build iam-authorized-keys-command
-yum install -y golang
+yum install -y golang git
 export GOPATH=/opt/golang
 
 COMMAND_DIR=$GOPATH/src/iam-authorized-keys-command
 
-mkdir -p $COMMAND_DIR
 cd $COMMAND_DIR
 
 go get ./...

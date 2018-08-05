@@ -10,7 +10,11 @@ Both changes make it easier to append user data for your logging solution of cho
 Container Ubuntu version now defaults to 18.04
 EC2 healthcheck port now defaults to 2222
 remove instance increment counter as aws docker objects
+vpc_name propogation?
 
+to do
+
+additional container packages variable
 Update readme
 
 # 3.7
