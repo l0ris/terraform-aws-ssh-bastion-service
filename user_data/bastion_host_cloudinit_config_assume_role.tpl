@@ -2,7 +2,7 @@
 ---
 package_update: true
 packages:
-  - docker-io 
+  - docker.io 
   - awscli
   - golang
 
@@ -99,6 +99,7 @@ write_files:
         #Build sshd service container
         cd /opt/sshd_worker
         systemctl start docker
+        systemctl enable docker
         docker build -t sshd_worker .
         # mkdir /opt/iam_helper
 
