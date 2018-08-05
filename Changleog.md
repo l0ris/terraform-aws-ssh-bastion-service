@@ -1,5 +1,28 @@
 **N.B. It is not possible to successfully apply module version >/=3.4 over version </=3.3 due to change from 'aws_security_group' to aws_security_group_rules' you will need to terraform destroy; terraform apply in this case**
 
+# 4.0
+
+## Move to Ubuntu 18.04 LTS for EC2 host. 
+
+Debian is good but Amazon do not mirror the Debian repos as they do with Ubuntu; Ubuntu has docker and awscli in the repos with easy and robust version control. The historic rationale for using Debian in this project has long since passed.
+
+Not possible to use Amazon Linux 2 because we need (from Systemd):
+* RunTimeMaxSec to limit the service container lifetime. This was introduced with Systemd version 229 (feb 2016) whereas Amazon Linux 2 uses version 219 (Feb 2015). This is a critical requirement.
+* Ability to pass through hostname and increment (`-- hostname foo%i`) from systemd to docker, which does not appear to be supported on Amazon Linux 2. Ths is a 'nice to have' feature.
+
+
+### Container Ubuntu version now defaults to 18.04
+### EC2 healthcheck port now defaults to 2222
+
+# to do
+
+Implement appendable user data.
+
+additional container packages variable
+
+Update readme
+
+try again network load balancer
 # 3.7
 
 **Feature:** ELB health check port may be optionally set to either port 22 (containerised service; default) or port 2222 (EC2 host sshd). If you are deploying a large number of bastion instances, all of them checking into the same parent account for IAM queries in reponse to load balancer health checks on port 22 causes IAM rate limiting from AWS. Using the modified EC2 host sshd of port 2222 avoids this issue and is recommended for larger deployments. The host sshd is set to port 2222 as part of the service setup so this heathcheck is not entirely invalid. Security group rules are conditionally created to support any combination of access/healthceck on port 2222 or not.
