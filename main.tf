@@ -171,15 +171,20 @@ resource "aws_security_group_rule" "bastion_host_out" {
 #Query for most recent AMI of type debian for use as host
 ##########################
 
-data "aws_ami" "debian" {
+data "aws_ami" "ubuntu" {
   most_recent = true
 
   filter {
     name   = "name"
-    values = ["debian-stretch-hvm-x86_64-*"]
+    values = ["ubuntu-bionic-18.04-amd64-server-*"]
   }
 
-  owners = ["379101102735"] # Debian
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["099720109477"] # Canonical
 }
 
 ############################
